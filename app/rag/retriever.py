@@ -11,7 +11,7 @@ class Retriever:
         query: str,
         faq_limit: int = 3,
         docs_limit: int = 3,
-        faq_score_threshold: float = 0.68,
+        faq_score_threshold: float = 0.60,
         docs_score_threshold: float = 0.72,
     ) -> list[dict]:
         query = self._normalize_query(query)

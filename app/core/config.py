@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     database_url: str
     ollama_base_url: str
     ollama_model: str
+    qdrant_url: str
+    qdrant_collection: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

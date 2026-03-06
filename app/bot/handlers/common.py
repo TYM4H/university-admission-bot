@@ -1,12 +1,15 @@
 from aiogram import Router
 from aiogram.types import Message
 
+from app.services.chat_service import chat_service
+
 router = Router()
 
 
 @router.message()
-async def echo_message(message: Message) -> None:
-    await message.answer(
-        f"Получил сообщение:\n{message.text}\n\n"
-        "На следующем этапе вместо эхо подключим Ollama."
+async def handle_message(message: Message) -> None:
+    response = await chat_service.get_response(
+        user_id=message.from_user.id,
+        text=message.text or "",
     )
+    await message.answer(response)

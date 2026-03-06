@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     bot_token: str
     database_url: str
+    ollama_base_url: str
+    ollama_model: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

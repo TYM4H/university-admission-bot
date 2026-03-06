@@ -1,3 +1,4 @@
+from app.llm.ollama_client import ollama_client
 from app.services.message_repository import message_repository
 
 
@@ -6,7 +7,7 @@ class ChatService:
         text = (text or "").strip()
 
         if not text:
-            return "Пустое сообщение не очень удобно анализировать."
+            return "Пустое сообщение я не очень умею читать между строк."
 
         await message_repository.save_message(
             user_id=user_id,
@@ -19,20 +20,9 @@ class ChatService:
             limit=10,
         )
 
-        history_lines = [
-            f"{message.role}: {message.text}"
-            for message in history
-        ]
+        prompt = self._build_prompt(history)
 
-        history_text = "\n".join(history_lines)
-
-        response = (
-            "Сообщение сохранено в PostgreSQL.\n\n"
-            f"Текущее сообщение: {text}\n\n"
-            f"Сообщений в истории: {len(history)}\n\n"
-            "Последние сообщения:\n"
-            f"{history_text}"
-        )
+        response = await ollama_client.generate(prompt)
 
         await message_repository.save_message(
             user_id=user_id,
@@ -41,6 +31,27 @@ class ChatService:
         )
 
         return response
+
+    def _build_prompt(self, history) -> str:
+        system_prompt = (
+            "Ты ассистент приемной комиссии университета. "
+            "Отвечай кратко и по делу. "
+            "Игнорируй грубый или неформальный язык пользователя и продолжай диалог спокойно. "
+            "Не выдумывай факты о правилах поступления."
+        )
+
+        dialog_lines = []
+        for message in history:
+            role = "Пользователь" if message.role == "user" else "Ассистент"
+            dialog_lines.append(f"{role}: {message.text}")
+
+        dialog_text = "\n".join(dialog_lines)
+
+        return (
+            f"{system_prompt}\n\n"
+            f"Диалог:\n{dialog_text}\n\n"
+            f"Ответ ассистента:"
+        )
 
 
 chat_service = ChatService()

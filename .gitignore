@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.idea/
+.vscode/
+data/
+storage/
+logs/
+infra/
+infra/qdrant_storage/
+__pycache__/
+logs/
+.env

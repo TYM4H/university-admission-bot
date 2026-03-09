@@ -1,3 +1,5 @@
+import logging
+
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 from app.core.config import settings
@@ -5,16 +7,19 @@ from app.services.embedding_service import embedding_service
 from app.rag.qdrant_client import qdrant_client
 
 
+logger = logging.getLogger("rag")
+
+
 class Retriever:
     def search(
         self,
         query: str,
-        faq_limit: int = 3,
+        faq_limit: int = 10,
         docs_limit: int = 3,
-        faq_score_threshold: float = 0.60,
+        faq_score_threshold: float = 0.50,
         docs_score_threshold: float = 0.72,
     ) -> list[dict]:
-        query = self._normalize_query(query)
+        logger.info(f"QUERY: {query}")
 
         if not query:
             return []
@@ -34,30 +39,25 @@ class Retriever:
             score_threshold=docs_score_threshold,
         )
 
+        logger.info(f"FAQ results: {len(faq_results)}")
+        logger.info(f"Docs results: {len(docs_results)}")
+
+        for r in faq_results:
+            logger.info(
+                f"FAQ MATCH | score={r['score']:.3f} | source={r['source']} | chunk={r['chunk_index']}"
+            )
+
+        for r in docs_results:
+            logger.info(
+                f"DOC MATCH | score={r['score']:.3f} | source={r['source']} | chunk={r['chunk_index']}"
+            )
+
         if faq_results:
-            return faq_results + docs_results
+            logger.info("Returning FAQ results only")
+            return faq_results[:2]
 
-        return docs_results
-
-    def _normalize_query(self, query: str) -> str:
-        query = (query or "").strip().lower()
-
-        replacements = {
-            "доки": "документы",
-            "доки нужны": "какие документы нужны для поступления",
-            "общага": "общежитие",
-            "есть ли общага": "предоставляется ли общежитие студентам очной формы обучения",
-            "есть ли общежитие": "предоставляется ли общежитие студентам очной формы обучения",
-            "егэ": "результаты егэ",
-            "сколько действует егэ": "сколько лет действуют результаты егэ",
-            "госуслуги": "подача документов через госуслуги",
-            "можно через госуслуги": "можно ли подать документы через госуслуги",
-        }
-
-        for old, new in replacements.items():
-            query = query.replace(old, new)
-
-        return query
+        logger.info("Returning DOC results only")
+        return docs_results[:2]
 
     def _search_by_doc_type(
         self,
@@ -120,7 +120,7 @@ class Retriever:
                     "page": payload.get("page"),
                     "chunk_index": payload.get("chunk_index"),
                     "doc_type": payload.get("doc_type", "document"),
-                    "question": payload.get("question"),
+                    "question": payload.get("question", ""),
                     "score": result.score,
                 }
             )

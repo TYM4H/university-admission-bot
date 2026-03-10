@@ -3,8 +3,9 @@ import logging
 from qdrant_client.models import Filter, FieldCondition, MatchValue
 
 from app.core.config import settings
-from app.services.embedding_service import embedding_service
 from app.rag.qdrant_client import qdrant_client
+from app.services.embedding_service import embedding_service
+from app.services.reranker_service import reranker_service
 
 
 logger = logging.getLogger("rag")
@@ -16,7 +17,7 @@ class Retriever:
         query: str,
         faq_limit: int = 10,
         docs_limit: int = 3,
-        faq_score_threshold: float = 0.50,
+        faq_score_threshold: float = 0.5,
         docs_score_threshold: float = 0.72,
     ) -> list[dict]:
         logger.info(f"QUERY: {query}")
@@ -53,6 +54,18 @@ class Retriever:
             )
 
         if faq_results:
+            logger.info("Running reranker for FAQ results")
+            faq_results = reranker_service.rerank(query, faq_results)
+
+            for r in faq_results:
+                logger.info(
+                    f"FAQ RERANK | "
+                    f"vector_score={r['score']:.3f} | "
+                    f"rerank_score={r['rerank_score']:.3f} | "
+                    f"source={r['source']} | "
+                    f"chunk={r['chunk_index']}"
+                )
+
             logger.info("Returning FAQ results only")
             return faq_results[:2]
 

@@ -75,6 +75,32 @@ Telegram-бот приёмной комиссии МТУСИ с RAG-поиско
 - [tests](./tests) - регрессионные тесты, integration smoke tests, quality benchmark
 - [compose.yaml](./compose.yaml) - Docker Compose для dev-режима
 
+## База знаний
+
+В проекте уже есть размеченный FAQ-файл:
+
+- [data/faq/mtuci_faq_rag.md](./data/faq/mtuci_faq_rag.md)
+
+Этот файл используется как структурированный набор вопросов и ответов для retrieval по FAQ.
+
+Также в базу знаний можно добавлять и другие документы:
+
+- PDF
+- Markdown
+- TXT
+
+Обычно дополнительные исходные документы складываются в [data/raw](./data/raw), после чего индексируются через:
+
+```bash
+docker compose --profile tools run --rm indexer
+```
+
+Во время индексации:
+
+- FAQ markdown загружается как набор отдельных Q&A-записей
+- PDF/Markdown/TXT разбиваются на чанки
+- все документы преобразуются в эмбеддинги и загружаются в Qdrant
+
 ## Требования
 
 Для запуска нужны:

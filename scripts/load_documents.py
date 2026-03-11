@@ -48,7 +48,7 @@ def main():
     texts = [document["text"] for document in all_documents]
     embeddings = embedding_service.embed_documents(texts)
 
-    vector_store.create_collection()
+    vector_store.recreate_collection()
     vector_store.upload_documents(all_documents, embeddings)
 
     print("Documents uploaded to Qdrant")

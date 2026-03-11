@@ -6,11 +6,13 @@ from app.rag.qdrant_client import qdrant_client
 
 
 class VectorStore:
-    def create_collection(self):
+    def _collection_exists(self) -> bool:
         collections = qdrant_client.get_collections().collections
         collection_names = {collection.name for collection in collections}
+        return settings.qdrant_collection in collection_names
 
-        if settings.qdrant_collection in collection_names:
+    def create_collection(self):
+        if self._collection_exists():
             return
 
         qdrant_client.create_collection(
@@ -20,6 +22,12 @@ class VectorStore:
                 distance=Distance.COSINE,
             ),
         )
+
+    def recreate_collection(self):
+        if self._collection_exists():
+            qdrant_client.delete_collection(settings.qdrant_collection)
+
+        self.create_collection()
 
     def upload_documents(self, documents: list[dict], embeddings: list[list[float]]):
         points = []

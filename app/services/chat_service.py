@@ -111,9 +111,10 @@ class ChatService:
 
         dialog_lines = []
         for message in history[:-1]:
-            if message.role != "user":
-                continue
-            dialog_lines.append(f"Пользователь: {message.text}")
+            if message.role == "user":
+                dialog_lines.append(f"Пользователь: {message.text}")
+            elif message.role == "bot":
+                dialog_lines.append(f"Ассистент: {message.text}")
 
         dialog_text = "\n".join(dialog_lines[-3:])
 

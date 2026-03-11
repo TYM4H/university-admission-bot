@@ -91,7 +91,51 @@ class ChatServiceRegressionTests(unittest.IsolatedAsyncioTestCase):
         )
 
         self.assertIn("есть в истории. Отвечай только", prompt)
-        self.assertIn("комиссии и поступления. Если ответ", prompt)
+        self.assertIn("поступления. Не отвечай на оффтоп", prompt)
+
+    def test_build_prompt_includes_bot_history_for_follow_up_questions(self):
+        chat_service_module = import_with_stubs(
+            "app.services.chat_service",
+            {
+                "app.rag.retriever": make_module(
+                    "app.rag.retriever",
+                    retriever=types.SimpleNamespace(search=Mock(return_value=[])),
+                ),
+                "app.llm.ollama_client": make_module(
+                    "app.llm.ollama_client",
+                    ollama_client=types.SimpleNamespace(generate=AsyncMock(return_value="ok")),
+                ),
+                "app.services.message_repository": make_module(
+                    "app.services.message_repository",
+                    message_repository=types.SimpleNamespace(
+                        save_message=AsyncMock(),
+                        get_last_messages=AsyncMock(return_value=[]),
+                    ),
+                ),
+            },
+        )
+        self.addCleanup(sys.modules.pop, "app.services.chat_service", None)
+
+        history = [
+            types.SimpleNamespace(role="user", text="Да, куда нужно подать документы?"),
+            types.SimpleNamespace(
+                role="bot",
+                text="Вы можете подать документы через портал Госуслуг или лично в приёмной комиссии.",
+            ),
+            types.SimpleNamespace(role="user", text="А где она находится?"),
+        ]
+
+        prompt = chat_service_module.ChatService()._build_prompt(
+            history=history,
+            relevant_documents=[],
+            user_question="А где она находится?",
+        )
+
+        self.assertIn("Пользователь: Да, куда нужно подать документы?", prompt)
+        self.assertIn(
+            "Ассистент: Вы можете подать документы через портал Госуслуг или лично в приёмной комиссии.",
+            prompt,
+        )
 
 
 class VectorStoreRegressionTests(unittest.TestCase):

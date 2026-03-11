@@ -4,11 +4,10 @@ __pycache__/
 .env
 .idea/
 .vscode/
-data/
+data/*
+!data/faq/
+!data/faq/*.md
 storage/
 logs/
-infra/
 infra/qdrant_storage/
-__pycache__/
-logs/
-.env
+infra/qdrant_storage_backup/
